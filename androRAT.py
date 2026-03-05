@@ -5,6 +5,7 @@ from utils import *
 import argparse
 import sys
 import platform
+import os
 
 try:
     from pyngrok import ngrok, conf
@@ -48,14 +49,22 @@ if args.build:
     if args.ngrok:
         try:
             conf.get_default().monitor_thread = False
-            conf.get_default().auth_token = "3AXOS7AFLjYl0kw7f1p7Tz2ySOq_7WGCDUCoFfGtymwrARAXF"
+            
+            # Read ngrok token from environment variable or use fallback
+            ngrok_token = os.environ.get('NGROK_AUTHTOKEN')
+            if not ngrok_token:
+                ngrok_token = "3AXOS7AFLjYl0kw7f1p7Tz2ySOq_7WGCDUCoFfGtymwrARAXF"
+            
+            if ngrok_token:
+                conf.get_default().auth_token = ngrok_token
+            
             port = 8000 if not port_ else int(port_)
             
-            print(stdOutput("info")+"\033[0mConectando a ngrok...")
+            print(stdOutput("info")+"\033[0mConnecting to ngrok...")
             tcp_tunnel = ngrok.connect(port, "tcp")
             ngrok_process = ngrok.get_ngrok_process()
             
-            # Extraer dominio e IP del túnel
+            # Extract domain and IP from tunnel
             domain, port_str = tcp_tunnel.public_url[6:].split(":")
             ip = socket.gethostbyname(domain)
             
@@ -63,7 +72,7 @@ if args.build:
             build(ip, port_str, args.output, True, port_, icon)
         except Exception as e:
             print(stdOutput("error")+"\033[1mNgrok error: %s" % str(e))
-            print(stdOutput("info")+"\033[1mUsa IP y puerto manual en su lugar")
+            print(stdOutput("info")+"\033[1mUse IP and port manually instead")
             if args.ip and args.port:
                 build(args.ip, args.port, args.output, False, None, icon)
     else:
