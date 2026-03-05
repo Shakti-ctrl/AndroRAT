@@ -5,8 +5,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // Updated to 8.2.0+ for Android 16 (API 36) support
-        classpath 'com.android.tools.build:gradle:8.2.0'
+        // Stable Android Gradle Plugin 8.1.4
+        // SDK 36 support via gradle.properties flag: android.suppressUnsupportedCompileSdk=36
+        classpath 'com.android.tools.build:gradle:8.1.4'
     }
 }
 
