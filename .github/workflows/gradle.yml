@@ -29,13 +29,18 @@ jobs:
     - name: Build Release APK with Gradle
       run: |
         cd Android_Code
-        ./gradlew clean assembleRelease -x lint --warning-mode all
+        # build both release and debug variants; debug APK is signed with debug key and installs reliably
+        ./gradlew clean assembleRelease assembleDebug -x lint --warning-mode all
     
     - name: Verify APK was built
       run: |
         echo "🔍 Searching for APK file..."
         # Find the APK in the build outputs
-        APK_FILE=$(find Android_Code/app/build/outputs -name "*.apk" -type f 2>/dev/null | head -1)
+        # prefer debug APK so it's signed automatically and installs without complaints
+        APK_FILE=$(find Android_Code/app/build/outputs -name "*debug.apk" -type f 2>/dev/null | head -1)
+        if [ -z "$APK_FILE" ]; then
+          APK_FILE=$(find Android_Code/app/build/outputs -name "*.apk" -type f 2>/dev/null | head -1)
+        fi
         
         if [ -z "$APK_FILE" ]; then
           echo "❌ APK not found! Listing build outputs directory:"

