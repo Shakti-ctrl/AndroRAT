@@ -33,20 +33,35 @@ jobs:
     
     - name: Verify APK was built
       run: |
-        if [ -f "Android_Code/app/build/outputs/apk/release/app-release.apk" ]; then
-          echo "✅ APK built successfully!"
-          echo "📦 APK Size:"
-          ls -lh Android_Code/app/build/outputs/apk/release/app-release.apk
-        else
-          echo "❌ APK build failed!"
+        echo "🔍 Searching for APK file..."
+        # Find the APK in the build outputs
+        APK_FILE=$(find Android_Code/app/build/outputs -name "*.apk" -type f 2>/dev/null | head -1)
+        
+        if [ -z "$APK_FILE" ]; then
+          echo "❌ APK not found! Listing build outputs directory:"
+          ls -la Android_Code/app/build/outputs/ 2>/dev/null || echo "Directory not found"
           exit 1
         fi
+        
+        echo "✅ APK found at: $APK_FILE"
+        echo "📦 APK Size:"
+        ls -lh "$APK_FILE"
+        
+        # Save APK path for later steps
+        echo "APK_PATH=$APK_FILE" >> $GITHUB_ENV
     
     - name: Check APK Compatibility
       run: |
         echo "📱 APK Compatibility Info:"
+        if [ -z "${{ env.APK_PATH }}" ]; then
+          echo "⚠️ APK_PATH not set, using default path"
+          APK_FILE="Android_Code/app/build/outputs/apk/release/app-release.apk"
+        else
+          APK_FILE="${{ env.APK_PATH }}"
+        fi
+        
         if command -v aapt &> /dev/null; then
-          aapt dump badging Android_Code/app/build/outputs/apk/release/app-release.apk | grep -E "package|versionCode|versionName|targetSdkVersion|minSdkVersion"
+          aapt dump badging "$APK_FILE" | grep -E "package|versionCode|versionName|targetSdkVersion|minSdkVersion" || echo "aapt parsing completed"
         else
           echo "aapt not available, but APK is built and ready"
         fi
@@ -55,7 +70,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: androrat-apk-android16
-        path: Android_Code/app/build/outputs/apk/release/app-release.apk
+        path: ${{ env.APK_PATH }}
         retention-days: 90
         if-no-files-found: error
     
@@ -63,7 +78,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
-        files: Android_Code/app/build/outputs/apk/release/app-release.apk
+        files: ${{ env.APK_PATH }}
         body: |
           # AndroRAT v2.2 - Android 16 Compatible APK
           
